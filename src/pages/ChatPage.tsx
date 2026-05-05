@@ -1,83 +1,109 @@
 import React, { useEffect, useState } from "react";
 import { Box, Button, Typography } from "@mui/material";
+
 import ChatSidebar from "../components/chat/ChatSidebar";
 import ChatWindow from "../components/chat/ChatWindow";
+import LogoutButton from "../components/LogoutButton";
+
 import type { Chat, Message } from "../types/chat";
 import { upgradeToPro } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../utils/axios";
 
 const ChatPage: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, refreshUser, authReady } = useAuth();
 
-  const [plan, setPlan] = useState<"basic" | "pro">("basic");
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // ✅ Initialize ONLY from AuthContext (NO getMe here)
+  const plan = user?.plan;
+  const isPro = plan === "pro";
+  const isBasic = plan === "basic";
+
+  /* ================= LOADING ================= */
+
+  if (!authReady) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          height: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography>Loading user...</Typography>
+      </Box>
+    );
+  }
+
+  /* ================= INIT ================= */
+
   useEffect(() => {
-    if (loading) return;
+    const init = async () => {
+      if (!plan) return;
 
-    if (!user) {
-      // 🔥 Not logged in → redirect
-      window.location.href = "/login";
-      return;
-    }
+      try {
+        if (isPro) {
+          const res = await api.get("/chat/list");
+          setChats(res.data);
 
-    const userPlan = user?.plan || "basic";
-    setPlan(userPlan);
+          if (res.data.length > 0) {
+            const firstChatId = res.data[0].id;
+            setCurrentChatId(firstChatId);
 
-    const defaultChat: Chat = {
-      id: crypto.randomUUID(),
-      title: userPlan === "basic" ? "Basic Chat" : "New Chat",
+            const history = await api.get(
+              `/chat/${firstChatId}/history`
+            );
+            setMessages(history.data);
+          }
+        } else {
+          setChats([]);
+          setMessages([]);
+          setCurrentChatId(null);
+        }
+      } catch (err) {
+        console.error("INIT ERROR:", err);
+      }
     };
 
-    setChats([defaultChat]);
-    setCurrentChatId(defaultChat.id);
-  }, [user, loading]);
+    init();
+  }, [plan, isPro]);
 
-  // ✅ Upgrade handler
+  /* ================= HANDLERS ================= */
+
   const handleUpgrade = async () => {
     try {
       await upgradeToPro();
-      setPlan("pro");
+      await refreshUser(); // 🔥 reload user + re-init chats
     } catch (err) {
-      console.error("UPGRADE ERROR:", err);
+      console.error("Upgrade failed:", err);
     }
   };
 
-  // ✅ New chat
-  const handleNewChat = () => {
-    const newChat: Chat = {
-      id: crypto.randomUUID(),
-      title: "New Chat",
-    };
+  const handleNewChat = async () => {
+    const res = await api.post("/chat/new");
+    const newChat = res.data;
 
     setChats((prev) => [newChat, ...prev]);
     setCurrentChatId(newChat.id);
     setMessages([]);
   };
 
-  // ✅ Select chat
-  const handleSelectChat = (id: string) => {
+  const handleSelectChat = async (id: string) => {
     setCurrentChatId(id);
-    setMessages([]);
+
+    const res = await api.get(`/chat/${id}/history`);
+    setMessages(res.data);
   };
 
-  // ⏳ Optional loading UI
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center" }}>
-        <Typography>Loading...</Typography>
-      </Box>
-    );
-  }
+  /* ================= RENDER ================= */
 
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#f7f7f8" }}>
-      
-      {/* Sidebar only for PRO */}
-      {plan === "pro" && (
+      {/* ===== SIDEBAR (PRO ONLY) ===== */}
+      {isPro && (
         <ChatSidebar
           chats={chats}
           selectedChatId={currentChatId}
@@ -86,9 +112,10 @@ const ChatPage: React.FC = () => {
         />
       )}
 
+      {/* ===== MAIN AREA ===== */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
         
-        {/* Header */}
+        {/* ===== HEADER (PUT LOGOUT HERE) ===== */}
         <Box
           sx={{
             height: 60,
@@ -96,22 +123,25 @@ const ChatPage: React.FC = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderBottom: "1px solid #e0e0e0",
+            borderBottom: "1px solid #ddd",
             bgcolor: "white",
           }}
         >
           <Typography sx={{ fontWeight: 600 }}>
-            AI Chat
+            AI Chat ({plan})
           </Typography>
 
-          {plan === "basic" && (
-            <Button variant="contained" onClick={handleUpgrade}>
-              Upgrade
-            </Button>
-          )}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {isBasic && (
+              <Button variant="contained" onClick={handleUpgrade}>
+                Upgrade
+              </Button>
+            )}
+            <LogoutButton />
+          </Box>
         </Box>
 
-        {/* Chat Window */}
+        {/* ===== CHAT WINDOW ===== */}
         <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
           <Box sx={{ width: "100%", maxWidth: 900 }}>
             <ChatWindow

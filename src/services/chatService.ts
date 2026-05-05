@@ -1,13 +1,25 @@
 import { api } from "../utils/axios";
 
-export interface SendMessageResponse {
-  reply: string;
-}
+export const sendMessage = async (
+  chatId: string | null,
+  text: string
+) => {
+  const payload: {
+    message: string;
+    chatId?: string;
+  } = {
+    message: text,
+  };
 
-export const sendMessage = async (chatId: string, message: string) => {
-  const res = await api.post("/chat/send", {
-    chatId,
-    message,
+  if (chatId) {
+    payload.chatId = chatId;
+  }
+  else{
+    payload.chatId = chatId ?? crypto.randomUUID();
+  }
+
+
+  const res = await api.post("/chat/send", payload, {
   });
 
   return res.data;

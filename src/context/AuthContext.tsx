@@ -1,23 +1,48 @@
-import  { createContext, useContext, useEffect, useState } from "react";
-import { getMe } from "../api/auth";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import type { ReactNode } from "react"
+import { getMe, logoutUser } from "../api/auth";
+import { useNavigate } from "react-router-dom";
+
+/* ================= TYPES ================= */
+
+type User = {
+  id: string;
+  email: string;
+  plan: "basic" | "pro";
+};
 
 interface AuthContextType {
-  user: any;
+  user: User | null;
   isAuthenticated: boolean;
-  setIsAuthenticated: (val: boolean) => void;
-  loading: boolean;
+  refreshUser: () => Promise<void>;
+  authReady: boolean;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>(null as any);
+/* ================= CONTEXT ================= */
 
-export const AuthProvider = ({ children }: any) => {
-  const [user, setUser] = useState(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/* ================= PROVIDER ================= */
+
+export const AuthProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
-  // 🔥 AUTO LOGIN ON REFRESH
-useEffect(() => {
-  const loadUser = async () => {
+  const navigate = useNavigate();
+
+  /* ✅ Load user once on app start */
+  const refreshUser = async () => {
     try {
       const data = await getMe();
       setUser(data);
@@ -26,20 +51,51 @@ useEffect(() => {
       setUser(null);
       setIsAuthenticated(false);
     } finally {
-      setLoading(false);
+      setAuthReady(true); // ✅ always resolve auth check
     }
   };
 
-  loadUser();
-}, []);
+  useEffect(() => {
+    refreshUser();
+  }, []);
+
+  /* ✅ Logout handler */
+  
+const logout = async () => {
+  try {
+    await logoutUser();
+  } catch (err) {
+    console.error("Logout API failed:", err);
+  } finally {
+    localStorage.removeItem("token");
+    setUser(null);
+    setIsAuthenticated(false);
+    navigate("/login", { replace: true });
+  }
+};
+
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, setIsAuthenticated, loading }}
+      value={{
+        user,
+        isAuthenticated,
+        refreshUser,
+        authReady,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+/* ================= HOOK ================= */
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
+};

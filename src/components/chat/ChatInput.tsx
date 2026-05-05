@@ -2,37 +2,64 @@ import { Box, IconButton, TextField } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { useState } from "react";
 
-const ChatInput = ({ onSend, disabled }: any) => {
+type Props = {
+  onSend: (msg: string) => void;
+  disabled?: boolean;
+};
+
+const ChatInput: React.FC<Props> = ({ onSend, disabled = false }) => {
   const [msg, setMsg] = useState("");
 
   const handleSend = () => {
-    if (!msg.trim()) return;
-    onSend(msg);
+    if (disabled || !msg.trim()) return;
+
+    onSend(msg.trim());
     setMsg("");
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
-    <Box sx={{ display: "flex", gap: 1 }}>
+    <Box
+      sx={{
+        display: "flex",
+        gap: 1,
+        alignItems: "center",
+      }}
+    >
       <TextField
         fullWidth
-        placeholder="Type your message..."
+        multiline
+        maxRows={4}
+        placeholder={
+          disabled ? "Chat disabled" : "Type your message..."
+        }
         value={msg}
         disabled={disabled}
         onChange={(e) => setMsg(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+        onKeyDown={handleKeyDown}
         sx={{
           "& .MuiOutlinedInput-root": {
             borderRadius: 3,
           },
         }}
       />
+
       <IconButton
         onClick={handleSend}
-        disabled={disabled}
+        disabled={disabled || !msg.trim()}
+        aria-label="Send message"
         sx={{
-          bgcolor: "#1976d2",
+          bgcolor: disabled ? "grey.400" : "primary.main",
           color: "white",
-          "&:hover": { bgcolor: "#1565c0" },
+          "&:hover": {
+            bgcolor: disabled ? "grey.400" : "primary.dark",
+          },
         }}
       >
         <SendIcon />

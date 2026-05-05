@@ -40,7 +40,9 @@ const validationSchema = Yup.object({
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useAuth();
+
+  // 🔥 ONLY THIS (NO setIsAuthenticated)
+  const { refreshUser } = useAuth();
 
   const formik = useFormik({
     initialValues: {
@@ -53,8 +55,13 @@ const LoginForm: React.FC = () => {
 
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        await loginUser(values.email, values.password); 
-        setIsAuthenticated(true);
+        // 1. Login API call
+        await loginUser(values.email, values.password);
+
+        // 2. IMPORTANT: fetch user (basic/pro comes from backend)
+        await refreshUser();
+
+        // 3. Redirect AFTER auth is updated
         navigate("/chat");
       } catch (error: any) {
         alert(error.response?.data || "Login failed");
@@ -132,10 +139,7 @@ const LoginForm: React.FC = () => {
 
       <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
         Don’t have an account?{" "}
-        <Link
-          to="/signup"
-          style={{ textDecoration: "none", color: "blue" }}
-        >
+        <Link to="/signup" style={{ textDecoration: "none", color: "blue" }}>
           Sign Up
         </Link>
       </Typography>
