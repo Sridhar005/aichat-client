@@ -1,21 +1,24 @@
 import {
   Box,
-  Button,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
   Typography,
   IconButton,
+  Divider,
 } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
 import type { Chat } from "../../types/chat";
+import AddIcon from "@mui/icons-material/Add";
 
 type Props = {
   chats: Chat[];
   selectedChatId: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
-  onDelete: (id: string) => void; // ✅ ADD THIS
+  onDelete: (id: string) => void;
+  onLogout: () => void; // ✅ ONLY logout here
 };
 
 const ChatSidebar: React.FC<Props> = ({
@@ -24,6 +27,7 @@ const ChatSidebar: React.FC<Props> = ({
   onSelect,
   onNewChat,
   onDelete,
+  onLogout,
 }) => {
   return (
     <Box
@@ -36,14 +40,39 @@ const ChatSidebar: React.FC<Props> = ({
         bgcolor: "white",
       }}
     >
-      {/* NEW CHAT */}
-      <Box sx={{ p: 2 }}>
-        <Button fullWidth variant="contained" onClick={onNewChat}>
-          + New Chat
-        </Button>
+
+
+      <Box
+        onClick={onNewChat}
+        sx={{
+          mx: 1,
+          my: 1,
+          px: 2,
+          py: 1.25,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.2,
+          borderRadius: 1,
+          cursor: "pointer",
+          color: "#1976d2",
+
+          "&:hover": {
+            bgcolor: "#b5c7d9",
+          },
+        }}
+      >
+        <AddIcon fontSize="small"  sx={{ color: "#64748b" }} />
+        <Typography
+          sx={{
+            fontWeight: 600,
+            fontSize: 14,
+          }}
+        >
+          New Chat
+        </Typography>
       </Box>
 
-      {/* HEADER */}
+
       <Typography sx={{ px: 2, pb: 1, fontWeight: 600 }}>
         Recent Chats
       </Typography>
@@ -57,7 +86,6 @@ const ChatSidebar: React.FC<Props> = ({
             </Typography>
           </ListItem>
         ) : (
-
           chats.map((chat) => (
             <ListItemButton
               key={chat.id}
@@ -70,8 +98,6 @@ const ChatSidebar: React.FC<Props> = ({
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-
-                // ✅ Show delete icon only on hover
                 "&:hover .delete-btn": {
                   opacity: 1,
                 },
@@ -79,36 +105,57 @@ const ChatSidebar: React.FC<Props> = ({
             >
               <ListItemText
                 primary={
-                  <Typography noWrap>
+                  <Typography
+                    noWrap
+                    title={chat.title}
+                    sx={{
+                      maxWidth: 160,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {chat.title}
                   </Typography>
                 }
               />
 
-              {/* ✅ DELETE ICON */}
               <IconButton
                 size="small"
                 className="delete-btn"
                 onClick={(e) => {
-                  e.stopPropagation(); // ✅ prevent chat select
+                  e.stopPropagation();
                   onDelete(chat.id);
                 }}
                 sx={{
-                  opacity: 0,                     // hidden by default
-                  color: "error.main",            // ✅ RED color
-                  transition: "opacity 0.2s ease-in-out, color 0.2s",
-                  "&:hover": {
-                    color: "error.dark",          // ✅ darker red on hover
-                  },
+                  opacity: 0,
+                  color: "error.main",
                 }}
               >
                 🗑
               </IconButton>
             </ListItemButton>
           ))
-
         )}
       </List>
+
+      {/* ✅ FOOTER: LOGOUT ICON */}
+      <Divider />
+      <Box
+        sx={{
+          py: 1.5,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <IconButton
+          onClick={onLogout}
+          title="Logout"
+          color="default"
+        >
+          <LogoutIcon />
+        </IconButton>
+      </Box>
     </Box>
   );
 };

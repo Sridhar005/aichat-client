@@ -1,18 +1,12 @@
 import React, { useState } from "react";
-import {
-  Button,
-  Divider,
-  Typography,
-  Stack,
-  Paper,
-  Box,
-} from "@mui/material";
+import { Button, Divider, Typography, Stack,Paper,Box} from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api/auth";
 import FormInput from "./FormInput";
 import { sanitize } from "../utils/sanitize";
+import toast from "react-hot-toast";
 
 const validationSchema = Yup.object({
   fullName: Yup.string().trim().min(3).required("Enter your full name"),
@@ -57,11 +51,14 @@ const SignupForm: React.FC = () => {
           safeData.email,
           safeData.password
         );
-
+        toast.success("Account created successfully");
         navigate("/login");
         setTimeout(() => setCooldown(false), 4000);
       } catch (err: any) {
-        alert(err.response?.data || "Registration failed");
+        toast.error(
+          err?.response?.data?.message ||
+          "Registration failed. Please try again."
+        );
         setCooldown(false);
       } finally {
         setSubmitting(false);
@@ -75,7 +72,7 @@ const SignupForm: React.FC = () => {
       sx={{
         width: "100%",
         maxWidth: 420,
-        maxHeight: "90vh",       
+        maxHeight: "90vh",
         overflowY: "auto",
 
         p: 4,
@@ -85,15 +82,15 @@ const SignupForm: React.FC = () => {
       }}
     >
       {/* HEADER */}
-      <Box sx={{ mb:4,textAlign:"center" }} >
-        <Typography sx={{fontSize:"32px", variant: "h5", fontWeight: 700, mb: 0.5 }}> 
+      <Box sx={{ mb: 4, textAlign: "center" }} >
+        <Typography sx={{ fontSize: "32px", variant: "h5", fontWeight: 700, mb: 0.5 }}>
           Create account
         </Typography>
       </Box>
 
       <form onSubmit={formik.handleSubmit}>
         <Stack spacing={3}>
-          
+
           {/* IDENTITY SECTION */}
           <Stack spacing={2}>
             <FormInput
@@ -149,8 +146,8 @@ const SignupForm: React.FC = () => {
       </form>
 
       {/* FOOTER */}
-      <Typography sx={{  variant:"body2", mt:4,color:"text.secondary" }}
-       
+      <Typography sx={{ variant: "body2", mt: 4, color: "text.secondary" }}
+
       >
         Already have an account?{" "}
         <Link

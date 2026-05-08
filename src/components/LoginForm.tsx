@@ -13,6 +13,7 @@ import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const FormInput = ({ label, name, type = "text", formik }: any) => (
   <TextField
@@ -59,7 +60,10 @@ const LoginForm: React.FC = () => {
         await refreshUser();
         navigate("/chat");
       } catch (error: any) {
-        alert(error.response?.data || "Login failed");
+        toast.error(
+          error?.response?.data?.message ||
+          "Login failed. Please try again."
+        );
       } finally {
         setSubmitting(false);
       }
