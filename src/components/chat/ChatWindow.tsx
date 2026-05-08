@@ -6,13 +6,17 @@ import type { Message, Chat } from "../../types/chat";
 import { v4 as uuidv4 } from "uuid";
 import { sendMessage } from "../../services/chatService";
 
+/**
+ * Constant chatId for Basic / ephemeral chats
+ * (Industry-standard approach)
+ */
+const TEMP_CHAT_ID = "temp";
+
 type Props = {
   chatId: string | null;
   setCurrentChatId: (id: string) => void;
-
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
-
   setChats: React.Dispatch<React.SetStateAction<Chat[]>>;
 };
 
@@ -26,44 +30,55 @@ const ChatWindow: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  /* ✅ ONLY show messages for the active chat */
-
+  /**
+   * ✅ INDUSTRY RULE:
+   * - Pro (real chatId): filter messages
+   * - Basic (no chatId): show all messages
+   */
   const visibleMessages = chatId
     ? messages.filter((m) => m.chatId === chatId)
     : messages;
-
 
   /* ✅ Auto-scroll */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [visibleMessages, loading]);
 
-  /* ✅ Reset typing state when chat resets */
-  useEffect(() => {
-    if (!chatId) {
-      setLoading(false);
-    }
-  }, [chatId]);
-
   const handleSend = async (msg: string) => {
     if (!msg.trim() || loading) return;
     setLoading(true);
 
+    // ✅ Determine active chatId (real or temp)
+    const activeChatId = chatId ?? TEMP_CHAT_ID;
+
     try {
+      /* ✅ USER MESSAGE (optimistic update) */
       const userMsg: Message = {
         id: uuidv4(),
-        chatId: chatId ?? "temp",
+        chatId: activeChatId,
         sender: "user",
         text: msg,
       };
 
       setMessages((prev) => [...prev, userMsg]);
 
+      /* ✅ CALL BACKEND */
       const res = await sendMessage(chatId, msg);
       // res = { reply, chatId, chatTitle }
 
+      /* ✅ Backend created chat → Pro upgrade path */
       if (!chatId && res.chatId) {
         setCurrentChatId(res.chatId);
+
+        // Move temp messages into real chatId
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.chatId === TEMP_CHAT_ID
+              ? { ...m, chatId: res.chatId }
+              : m
+          )
+        );
+
         setChats((prev) => [
           {
             id: res.chatId,
@@ -74,17 +89,10 @@ const ChatWindow: React.FC<Props> = ({
         ]);
       }
 
-      if (res.chatTitle && chatId) {
-        setChats((prev) =>
-          prev.map((c) =>
-            c.id === chatId ? { ...c, title: res.chatTitle } : c
-          )
-        );
-      }
-
+      /* ✅ AI MESSAGE */
       const aiMsg: Message = {
         id: uuidv4(),
-        chatId: res.chatId ?? chatId!,
+        chatId: res.chatId ?? activeChatId,
         sender: "ai",
         text: res.reply,
       };
