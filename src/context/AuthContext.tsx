@@ -4,31 +4,27 @@ import {
   useEffect,
   useState,
 } from "react";
-import type { ReactNode } from "react"
-import { getMe, logoutUser } from "../api/auth";
-import { useNavigate } from "react-router-dom";
-
-/* ================= TYPES ================= */
+import type { ReactNode } from "react";
+import { api } from "../utils/axios";
+import { logoutUser } from "../api/auth";
+import { useNavigate, useLocation } from "react-router-dom";
 
 type User = {
   id: string;
   email: string;
   plan: "basic" | "pro";
+  fullName?: string;
 };
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  refreshUser: () => Promise<void>;
   authReady: boolean;
+  refreshUser: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
-/* ================= CONTEXT ================= */
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-/* ================= PROVIDER ================= */
 
 export const AuthProvider = ({
   children,
@@ -36,52 +32,58 @@ export const AuthProvider = ({
   children: ReactNode;
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authReady, setAuthReady] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  /* ✅ Load user once on app start */
+  /* ✅ Restore session from cookie */
   const refreshUser = async () => {
     try {
-      const data = await getMe();
-      setUser(data);
-      setIsAuthenticated(true);
-    } catch {
-      setUser(null);
-      setIsAuthenticated(false);
+      const res = await api.get("/user/me");
+      setUser(res.data);
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setUser(null);
+      } else {
+        console.error("Unexpected auth error:", err);
+      }
     } finally {
-      setAuthReady(true); // ✅ always resolve auth check
+      setAuthReady(true);
     }
   };
 
   useEffect(() => {
+    if (
+      location.pathname === "/login" ||
+      location.pathname === "/signup"
+    ) {
+      setAuthReady(true);
+      return;
+    }
+
     refreshUser();
-  }, []);
+  }, [location.pathname]);
 
-  /* ✅ Logout handler */
-  
-const logout = async () => {
-  try {
-    await logoutUser();
-  } catch (err) {
-    console.error("Logout API failed:", err);
-  } finally {
-    localStorage.removeItem("token");
-    setUser(null);
-    setIsAuthenticated(false);
-    navigate("/login", { replace: true });
-  }
-};
 
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setUser(null);
+      navigate("/login", { replace: true });
+    }
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
-        refreshUser,
+        isAuthenticated: !!user,
         authReady,
+        refreshUser,
         logout,
       }}
     >
@@ -89,8 +91,6 @@ const logout = async () => {
     </AuthContext.Provider>
   );
 };
-
-/* ================= HOOK ================= */
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
