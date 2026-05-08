@@ -1,22 +1,22 @@
 import React from "react";
-import { Box, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import LoginForm from "../components/LoginForm";
 
 const LoginPage: React.FC = () => {
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f5f5f5",
-        }}
-      >
-        <LoginForm />
-      </Box>
-    </Container>
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "#f6f8fb",
+        overflow: "hidden",
+        px: 2,
+      }}
+    >
+      <LoginForm />
+    </Box>
   );
 };
 

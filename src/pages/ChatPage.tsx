@@ -9,6 +9,7 @@ import type { Chat, Message } from "../types/chat";
 import { upgradeToPro } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../utils/axios";
+import { deleteChat } from "../services/chatService";
 
 const ChatPage: React.FC = () => {
   const { user, refreshUser, authReady } = useAuth();
@@ -98,6 +99,20 @@ const ChatPage: React.FC = () => {
     setMessages(res.data);
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+  try {
+    await deleteChat(chatId);
+
+    setChats(prev => prev.filter(c => c.id !== chatId));
+
+    if (currentChatId === chatId) {
+      setCurrentChatId(null);
+      setMessages([]);
+    }
+  } catch (err) {
+    console.error("Delete chat failed:", err);
+  }
+};
   /* ================= RENDER ================= */
 
   return (
@@ -109,12 +124,13 @@ const ChatPage: React.FC = () => {
           selectedChatId={currentChatId}
           onSelect={handleSelectChat}
           onNewChat={handleNewChat}
+          onDelete={handleDeleteChat}
         />
       )}
 
       {/* ===== MAIN AREA ===== */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        
+
         {/* ===== HEADER (PUT LOGOUT HERE) ===== */}
         <Box
           sx={{
@@ -128,7 +144,8 @@ const ChatPage: React.FC = () => {
           }}
         >
           <Typography sx={{ fontWeight: 600 }}>
-            AI Chat ({plan})
+            {/* AI Chat ({plan}) */}
+            AI Chat
           </Typography>
 
           <Box sx={{ display: "flex", gap: 1 }}>
@@ -144,11 +161,15 @@ const ChatPage: React.FC = () => {
         {/* ===== CHAT WINDOW ===== */}
         <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
           <Box sx={{ width: "100%", maxWidth: 900 }}>
+
             <ChatWindow
               chatId={currentChatId}
+              setCurrentChatId={setCurrentChatId}
               messages={messages}
               setMessages={setMessages}
+              setChats={setChats}
             />
+
           </Box>
         </Box>
 
