@@ -6,10 +6,6 @@ import type { Message, Chat } from "../../types/chat";
 import { v4 as uuidv4 } from "uuid";
 import { sendMessage } from "../../services/chatService";
 
-/**
- * Constant chatId for Basic / ephemeral chats
- * (Industry-standard approach)
- */
 const TEMP_CHAT_ID = "temp";
 
 type Props = {
@@ -30,29 +26,25 @@ const ChatWindow: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  /**
-   * ✅ INDUSTRY RULE:
-   * - Pro (real chatId): filter messages
-   * - Basic (no chatId): show all messages
-   */
-  const visibleMessages = chatId
-    ? messages.filter((m) => m.chatId === chatId)
-    : messages;
+  const visibleMessages = messages.filter(
+    (m) =>
+      m.chatId === (chatId ?? TEMP_CHAT_ID)
+  );
 
-  /* ✅ Auto-scroll */
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [visibleMessages, loading]);
+
 
   const handleSend = async (msg: string) => {
     if (!msg.trim() || loading) return;
     setLoading(true);
 
-    // ✅ Determine active chatId (real or temp)
     const activeChatId = chatId ?? TEMP_CHAT_ID;
 
     try {
-      /* ✅ USER MESSAGE (optimistic update) */
+      /* ✅ USER MESSAGE */
       const userMsg: Message = {
         id: uuidv4(),
         chatId: activeChatId,
@@ -62,15 +54,16 @@ const ChatWindow: React.FC<Props> = ({
 
       setMessages((prev) => [...prev, userMsg]);
 
-      /* ✅ CALL BACKEND */
-      const res = await sendMessage(chatId, msg);
-      // res = { reply, chatId, chatTitle }
+      /* ✅ SEND TO BACKEND */
+      const res = await sendMessage(
+        activeChatId === TEMP_CHAT_ID ? null : activeChatId,
+        msg
+      );
 
-      /* ✅ Backend created chat → Pro upgrade path */
+      /* ✅ CHAT CREATED */
       if (!chatId && res.chatId) {
         setCurrentChatId(res.chatId);
 
-        // Move temp messages into real chatId
         setMessages((prev) =>
           prev.map((m) =>
             m.chatId === TEMP_CHAT_ID
@@ -104,6 +97,7 @@ const ChatWindow: React.FC<Props> = ({
       setLoading(false);
     }
   };
+
 
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
