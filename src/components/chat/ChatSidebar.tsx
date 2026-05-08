@@ -6,6 +6,7 @@ import {
   ListItemButton,
   ListItemText,
   Typography,
+  IconButton,
 } from "@mui/material";
 import type { Chat } from "../../types/chat";
 
@@ -14,6 +15,7 @@ type Props = {
   selectedChatId: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
+  onDelete: (id: string) => void; // ✅ ADD THIS
 };
 
 const ChatSidebar: React.FC<Props> = ({
@@ -21,6 +23,7 @@ const ChatSidebar: React.FC<Props> = ({
   selectedChatId,
   onSelect,
   onNewChat,
+  onDelete,
 }) => {
   return (
     <Box
@@ -54,12 +57,25 @@ const ChatSidebar: React.FC<Props> = ({
             </Typography>
           </ListItem>
         ) : (
+
           chats.map((chat) => (
             <ListItemButton
               key={chat.id}
               selected={chat.id === selectedChatId}
               onClick={() => onSelect(chat.id)}
-              sx={{ borderRadius: 1, mx: 1, my: 0.5 }}
+              sx={{
+                borderRadius: 1,
+                mx: 1,
+                my: 0.5,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+
+                // ✅ Show delete icon only on hover
+                "&:hover .delete-btn": {
+                  opacity: 1,
+                },
+              }}
             >
               <ListItemText
                 primary={
@@ -68,8 +84,29 @@ const ChatSidebar: React.FC<Props> = ({
                   </Typography>
                 }
               />
+
+              {/* ✅ DELETE ICON */}
+              <IconButton
+                size="small"
+                className="delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation(); // ✅ prevent chat select
+                  onDelete(chat.id);
+                }}
+                sx={{
+                  opacity: 0,                     // hidden by default
+                  color: "error.main",            // ✅ RED color
+                  transition: "opacity 0.2s ease-in-out, color 0.2s",
+                  "&:hover": {
+                    color: "error.dark",          // ✅ darker red on hover
+                  },
+                }}
+              >
+                🗑
+              </IconButton>
             </ListItemButton>
           ))
+
         )}
       </List>
     </Box>

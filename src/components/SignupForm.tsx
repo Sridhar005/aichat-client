@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import {
-  Box,
   Button,
   Divider,
   Typography,
   Stack,
+  Paper,
+  Box,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -14,31 +15,21 @@ import FormInput from "./FormInput";
 import { sanitize } from "../utils/sanitize";
 
 const validationSchema = Yup.object({
-  fullName: Yup.string()
-    .trim()
-    .min(3)
-    .required("Full Name is required"),
-
-  email: Yup.string()
-    .trim()
-    .email("Invalid email")
-    .required("Email is required"),
-
+  fullName: Yup.string().trim().min(3).required("Enter your full name"),
+  email: Yup.string().trim().email("Invalid email").required("Enter your email"),
   password: Yup.string()
-    .required()
+    .required("Create a password")
     .matches(
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,16}$/,
-      "Weak password"
+      "Use 8–16 chars with upper, lower, number & Special"
     ),
-
   confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords must match")
-    .required(),
+    .oneOf([Yup.ref("password")], "Passwords do not match")
+    .required("Confirm your password"),
 });
 
 const SignupForm: React.FC = () => {
   const navigate = useNavigate();
-
   const [cooldown, setCooldown] = useState(false);
 
   const formik = useFormik({
@@ -49,31 +40,26 @@ const SignupForm: React.FC = () => {
       confirmPassword: "",
     },
     validationSchema,
-
     onSubmit: async (values, { setSubmitting }) => {
       if (cooldown) return;
 
       try {
         setCooldown(true);
 
-        // ⛑️ SANITIZE INPUTS
         const safeData = {
           fullName: sanitize(values.fullName),
           email: sanitize(values.email),
           password: values.password,
         };
 
-        const result = await registerUser(
+        await registerUser(
           safeData.fullName,
           safeData.email,
           safeData.password
         );
 
-        alert(result.message || "Account created");
         navigate("/login");
-
-        // ⛔ prevent spam submit
-        setTimeout(() => setCooldown(false), 5000);
+        setTimeout(() => setCooldown(false), 4000);
       } catch (err: any) {
         alert(err.response?.data || "Registration failed");
         setCooldown(false);
@@ -84,57 +70,100 @@ const SignupForm: React.FC = () => {
   });
 
   return (
-    <Box
+    <Paper
+      elevation={0}
       sx={{
-        maxWidth: 400,
-        mx: "auto",
-        mt: 8,
+        width: "100%",
+        maxWidth: 420,
+        maxHeight: "90vh",       
+        overflowY: "auto",
+
         p: 4,
-        boxShadow: 3,
-        borderRadius: 2,
-        backgroundColor: "white",
+        borderRadius: 3,
+        bgcolor: "#ffffff",
+        boxShadow: "0 16px 40px rgba(0,0,0,0.08)",
       }}
     >
-      <Typography variant="h5" sx={{ textAlign:"center", mb:2 }}>
-        Create Account
-      </Typography>
+      {/* HEADER */}
+      <Box sx={{ mb:4,textAlign:"center" }} >
+        <Typography sx={{fontSize:"32px", variant: "h5", fontWeight: 700, mb: 0.5 }}> 
+          Create account
+        </Typography>
+      </Box>
 
       <form onSubmit={formik.handleSubmit}>
-        <Stack spacing={2}>
-          <FormInput label="Full Name" name="fullName" formik={formik} />
-          <FormInput label="Email" name="email" type="email" formik={formik} />
-          <FormInput label="Password" name="password" type="password" formik={formik} />
-          <FormInput
-            label="Confirm Password"
-            name="confirmPassword"
-            type="password"
-            formik={formik}
-          />
+        <Stack spacing={3}>
+          
+          {/* IDENTITY SECTION */}
+          <Stack spacing={2}>
+            <FormInput
+              label="Full name"
+              name="fullName"
+              formik={formik}
+            />
+            <FormInput
+              label="Email address"
+              name="email"
+              type="email"
+              formik={formik}
+            />
+          </Stack>
 
-          <Divider>OR</Divider>
+          {/* SECURITY SECTION */}
+          <Stack spacing={2}>
+            <FormInput
+              label="Password"
+              name="password"
+              type="password"
+              formik={formik}
+            />
+            <FormInput
+              label="Confirm password"
+              name="confirmPassword"
+              type="password"
+              formik={formik}
+            />
+          </Stack>
 
-          <Button variant="outlined" fullWidth>
-            Continue with Google
-          </Button>
-
+          {/* CTA */}
           <Button
             type="submit"
             variant="contained"
             disabled={formik.isSubmitting || cooldown}
             fullWidth
+            sx={{
+              mt: 1,
+              py: 1.4,
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: 15,
+              textTransform: "none",
+            }}
           >
-            {cooldown ? "Wait..." : "Create Account"}
+            {cooldown ? "Please wait…" : "Create account"}
           </Button>
+
+          {/* SECONDARY ACTION */}
+          <Divider />
         </Stack>
       </form>
 
-      <Typography sx={{ textAlign:"center", mt: 2}}>
+      {/* FOOTER */}
+      <Typography sx={{  variant:"body2", mt:4,color:"text.secondary" }}
+       
+      >
         Already have an account?{" "}
-        <Link to="/login" style={{ textDecoration: "none", color: "blue" }}>
-          Login
+        <Link
+          to="/login"
+          style={{
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          Sign in
         </Link>
       </Typography>
-    </Box>
+    </Paper>
   );
 };
 

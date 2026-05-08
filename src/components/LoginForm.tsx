@@ -6,6 +6,7 @@ import {
   Typography,
   Stack,
   Divider,
+  Paper,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -24,24 +25,25 @@ const FormInput = ({ label, name, type = "text", formik }: any) => (
     onBlur={formik.handleBlur}
     error={formik.touched[name] && Boolean(formik.errors[name])}
     helperText={formik.touched[name] && formik.errors[name]}
+    sx={{
+      "& .MuiOutlinedInput-root": {
+        borderRadius: 2,
+        backgroundColor: "#fafafa",
+      },
+    }}
   />
 );
 
 const validationSchema = Yup.object({
   email: Yup.string()
-    .trim()
-    .email("Invalid email format")
+    .email("Invalid email")
     .required("Email is required"),
-
   password: Yup.string()
-    .min(6, "Minimum 6 characters required")
     .required("Password is required"),
 });
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-
-  // 🔥 ONLY THIS (NO setIsAuthenticated)
   const { refreshUser } = useAuth();
 
   const formik = useFormik({
@@ -50,18 +52,11 @@ const LoginForm: React.FC = () => {
       password: "",
       rememberMe: false,
     },
-
     validationSchema,
-
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        // 1. Login API call
         await loginUser(values.email, values.password);
-
-        // 2. IMPORTANT: fetch user (basic/pro comes from backend)
         await refreshUser();
-
-        // 3. Redirect AFTER auth is updated
         navigate("/chat");
       } catch (error: any) {
         alert(error.response?.data || "Login failed");
@@ -72,29 +67,34 @@ const LoginForm: React.FC = () => {
   });
 
   return (
-    <Box
+    <Paper
+      elevation={0}
       sx={{
-        maxWidth: 400,
         width: "100%",
+        maxWidth: 420,
+        maxHeight: "90vh",
         p: 4,
-        borderRadius: 2,
-        boxShadow: 3,
-        backgroundColor: "white",
+        borderRadius: 3,
+        bgcolor: "#ffffff",
+        boxShadow: "0 16px 40px rgba(0,0,0,0.08)",
+        overflow: "hidden",
       }}
     >
-      <Typography variant="h5" sx={{ textAlign: "center", mb: 2 }}>
-        Login
-      </Typography>
+      {/* HEADER */}
+      <Box sx={{ mb:3, textAlign: "center"}}>
+        <Typography sx={{fontSize: "32px",variant:"h2", fontWeight:700, mb: 0.5 }} >
+          Sign in
+        </Typography>
+      </Box>
 
       <form onSubmit={formik.handleSubmit}>
-        <Stack spacing={2}>
+        <Stack spacing={2.5}>
           <FormInput
-            label="Email Address"
+            label="Email address"
             name="email"
             type="email"
             formik={formik}
           />
-
           <FormInput
             label="Password"
             name="password"
@@ -102,48 +102,72 @@ const LoginForm: React.FC = () => {
             formik={formik}
           />
 
-          <label style={{ fontSize: "14px" }}>
-            <input
-              type="checkbox"
-              name="rememberMe"
-              checked={formik.values.rememberMe}
-              onChange={formik.handleChange}
-            />
-            {" "}Remember Me
-          </label>
-
-          <Typography
-            variant="body2"
-            color="primary"
-            sx={{ cursor: "pointer" }}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: 14,
+            }}
           >
-            Forgot Password?
-          </Typography>
+            <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={formik.values.rememberMe}
+                onChange={formik.handleChange}
+              />
+              Remember me
+            </label>
+
+            <Typography
+              variant="body2"
+              sx={{ cursor: "pointer" }}
+              color="primary"
+            >
+              Forgot password?
+            </Typography>
+          </Box>
 
           <Button
             type="submit"
             variant="contained"
             fullWidth
             disabled={formik.isSubmitting}
+            sx={{
+              mt: 0.5,
+              py: 1.3,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: "none",
+            }}
           >
-            {formik.isSubmitting ? "Logging in..." : "Login"}
+            {formik.isSubmitting ? "Signing in…" : "Sign in"}
           </Button>
 
-          <Divider>OR</Divider>
+          <Divider />
 
-          <Button variant="outlined" fullWidth>
+          <Button
+            variant="outlined"
+            fullWidth
+            sx={{
+              py: 1.1,
+              borderRadius: 2,
+              textTransform: "none",
+            }}
+          >
             Continue with Google
           </Button>
         </Stack>
       </form>
 
-      <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
+      <Typography sx={{  variant:"body2",mt:3,color:"text.secondary" }}>
         Don’t have an account?{" "}
-        <Link to="/signup" style={{ textDecoration: "none", color: "blue" }}>
-          Sign Up
+        <Link to="/signup" style={{ fontWeight: 600, textDecoration: "none" }}>
+          Create one
         </Link>
       </Typography>
-    </Box>
+    </Paper>
   );
 };
 

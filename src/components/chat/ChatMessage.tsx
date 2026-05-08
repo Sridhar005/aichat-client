@@ -1,6 +1,12 @@
 import { Box, Paper } from "@mui/material";
 
-const ChatMessage = ({ message, sender }: any) => {
+type Props = {
+  message: string;
+  sender: "user" | "ai";
+  thinking?: boolean;
+};
+
+const ChatMessage: React.FC<Props> = ({ message, sender, thinking }) => {
   const isUser = sender === "user";
 
   return (
@@ -20,9 +26,11 @@ const ChatMessage = ({ message, sender }: any) => {
           color: isUser ? "white" : "black",
           maxWidth: "75%",
           fontSize: 14,
+          fontStyle: thinking ? "italic" : "normal",
+          opacity: thinking ? 0.7 : 1,
         }}
       >
-        {message}
+        {thinking ? "Typing…" : message}
       </Paper>
     </Box>
   );
