@@ -3,6 +3,7 @@ export interface Message {
   chatId: string;
   sender: "user" | "ai";
   text: string;
+  thinking?: boolean
 }
 
 export interface Chat {
