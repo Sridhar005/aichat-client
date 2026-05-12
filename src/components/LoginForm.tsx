@@ -128,6 +128,7 @@ const LoginForm: React.FC = () => {
               variant="body2"
               sx={{ cursor: "pointer" }}
               color="primary"
+              onClick={() => navigate("/forgot-password")}
             >
               Forgot password?
             </Typography>
