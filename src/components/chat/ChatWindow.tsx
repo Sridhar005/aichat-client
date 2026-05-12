@@ -27,15 +27,12 @@ const ChatWindow: React.FC<Props> = ({
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const visibleMessages = messages.filter(
-    (m) =>
-      m.chatId === (chatId ?? TEMP_CHAT_ID)
+    (m) => m.chatId === (chatId ?? TEMP_CHAT_ID)
   );
-
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [visibleMessages, loading]);
-
 
   const handleSend = async (msg: string) => {
     if (!msg.trim() || loading) return;
@@ -60,10 +57,11 @@ const ChatWindow: React.FC<Props> = ({
         msg
       );
 
-      /* ✅ CHAT CREATED */
+      /* ✅ CHAT CREATED (first message only) */
       if (!chatId && res.chatId) {
         setCurrentChatId(res.chatId);
 
+        // Update temp messages to real chatId
         setMessages((prev) =>
           prev.map((m) =>
             m.chatId === TEMP_CHAT_ID
@@ -72,14 +70,25 @@ const ChatWindow: React.FC<Props> = ({
           )
         );
 
+        // Add new chat to sidebar
         setChats((prev) => [
           {
             id: res.chatId,
             title: res.chatTitle || "New Chat",
-            createdAt: new Date().toISOString(),
           },
           ...prev,
         ]);
+      }
+
+      /* ✅ ✅ ✅ UPDATE CHAT TITLE (FIX) */
+      if (res.chatId && res.chatTitle) {
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.id === res.chatId
+              ? { ...chat, title: res.chatTitle }
+              : chat
+          )
+        );
       }
 
       /* ✅ AI MESSAGE */
@@ -97,7 +106,6 @@ const ChatWindow: React.FC<Props> = ({
       setLoading(false);
     }
   };
-
 
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
