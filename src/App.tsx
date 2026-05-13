@@ -3,6 +3,8 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import ChatPage from "./pages/ChatPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -20,6 +22,9 @@ function App() {
       />
 
       <Route path="*" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
     </Routes>
   );
 }
