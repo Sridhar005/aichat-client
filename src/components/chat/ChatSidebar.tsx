@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import type { Chat } from "../../types/chat";
-import AddIcon from "@mui/icons-material/Add";
+import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 
 type Props = {
   chats: Chat[];
@@ -61,7 +61,7 @@ const ChatSidebar: React.FC<Props> = ({
           },
         }}
       >
-        <AddIcon fontSize="small"  sx={{ color: "#64748b" }} />
+        <ChatOutlinedIcon fontSize="small" sx={{ color: "#64748b" }} />
         <Typography
           sx={{
             fontWeight: 600,
